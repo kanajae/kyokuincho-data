@@ -1,0 +1,11 @@
+data/ (offices.json, areas.json, moved.json, meta.json)
+  Open Database License (ODbL) v1.0
+  https://opendatacommons.org/licenses/odbl/1-0/
+
+  Contains information from OpenStreetMap, which is made available under the ODbL.
+  © OpenStreetMap contributors — https://www.openstreetmap.org/copyright
+
+  市区町村の判定に「国土数値情報（行政区域データ）」（国土交通省、CC BY 4.0）を加工して使用。
+
+scripts/
+  MIT License — Copyright (c) 2026 kanajae

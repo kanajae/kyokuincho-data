@@ -1,0 +1,5 @@
+.venv/
+n03/
+osm.json
+changes.json
+__pycache__/

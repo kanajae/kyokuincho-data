@@ -1,0 +1,54 @@
+name: monthly
+
+on:
+  schedule:
+    - cron: "0 18 1 * *" # 毎月2日 03:00 JST
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install "shapely==2.*"
+
+      # 国土数値情報 行政区域(N03) 2025年版 — 年1回の更新。新しい版が出たらURLとキーを変える
+      - uses: actions/cache@v4
+        with:
+          path: n03
+          key: n03-20250101
+      - name: N03
+        run: |
+          if [ ! -f n03/N03-20250101.geojson ]; then
+            curl -fsSL https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2025/N03-20250101_GML.zip -o n03.zip
+            unzip -j n03.zip N03-20250101.geojson -d n03
+            rm n03.zip
+          fi
+
+      - name: OpenStreetMap
+        run: |
+          curl -fsS --retry 3 --retry-delay 60 --max-time 1200 \
+            --data-urlencode "data@scripts/query.overpassql" \
+            https://overpass-api.de/api/interpreter -o osm.json
+
+      - name: みんなで追加
+        run: curl -fsS "https://kyokuincho-photos.heunglab.workers.dev/offices/changes?since=0" -o changes.json
+
+      - run: python -I scripts/monthly.py osm.json n03/N03-20250101.geojson "$(TZ=Asia/Tokyo date +%F)" changes.json .
+
+      - name: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          git diff --cached --quiet || git commit -m "data: $(TZ=Asia/Tokyo date +%F)"
+          git push
